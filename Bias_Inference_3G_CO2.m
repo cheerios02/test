@@ -3,13 +3,14 @@ load('inputMCXG3_het_CO2.txt');
 load('inputMCYG3_het_CO2.txt');
 load('assign_G3_Het_C02.txt');
 load('theta_G3_Het_new_CO2.txt');
+load('BigG_perm_G3_het_CO2.mat')
 
 % Define the number of periods, variables, replications, countries, and groups
 T = 19;
 Var = 8;
 N = 21;
-repNum = 500;
-optGroup = assign_G3_Het_C02';
+repNum = 50;
+optGroup = BigG_perm;
 G = 3;
 
 % Initialize variables
@@ -70,9 +71,12 @@ end
 
 thetas = thetas(~any(isnan(thetas),2),:);
 %% Bias:
-true_thetas = [1.0573,1.0437,1.0311;-0.282,0.2397,0.0848;3.0497,1.6145,-0.3242;-1.5472,-1.3994,-1.2407;-0.9248,-0.9176,-0.5975;-0.0038,-0.0024,0.0001;0.0013,0.0004,-0.00006;0.0083,0.0021,0.0096];
-disp('The bias of the thetas across all simulations are are:')
-mean_theta = reshape(mean(thetas), [Var,G]);
+%true_thetas = [1.0573,1.0437,1.0311;-0.282,0.2397,0.0848;3.0497,1.6145,-0.3242;-1.5472,-1.3994,-1.2407;-0.9248,-0.9176,-0.5975;-0.0038,-0.0024,0.0001;0.0013,0.0004,-0.00006;0.0083,0.0021,0.0096];
+true_thetas = [0.8544,0.9519,0.9658;0.0847,0.0577,0.1254;-0.425,0.7681,0.5967;-1.1846,-1.3381,-1.35;-0.6426,-0.7447,-0.8035;-0.0023,-0.00026,-0.0035;0.00029,0.00017,0.00056;0.0065,0.0041,0.0051];
+disp('The bias of the theta across all simulations:')
+%mean_theta = reshape(mean(thetas), [Var,G]);
+mean_theta = reshape(mean(theta_G3_Het_new_CO2), [Var,G]);
+disp(mean_theta)
 disp(abs(1 - mean_theta./true_thetas))
 
 %% Standard Deviation

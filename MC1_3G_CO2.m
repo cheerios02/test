@@ -7,9 +7,9 @@ G = 3;
 T = 19;
 K = 8;
 sim = 60000;
-num_simulations = 500;
-opt_group_assign_all = zeros(num_simulations, N);
-opt_thetas_assign_all = zeros(num_simulations,G*K);
+num_simulations = 50;
+opt_group_assign_all = zeros(num_simulations-37, N);
+opt_thetas_assign_all = zeros(num_simulations-37,G*K);
 
 % Begin the simulations
 for sth = 1:num_simulations
@@ -163,7 +163,15 @@ for sth = 1:num_simulations
     opt_group_assign_all(sth, :) = opt_group_assign';
     opt_thetas_assign_all(sth,:,:) = reshape(thetas_opt,1,G*K);
 end
-return;
+
+true_thetas = [0.8544,0.9519,0.9658;0.0847,0.0577,0.1254;-0.425,0.7681,0.5967;-1.1846,-1.3381,-1.35;-0.6426,-0.7447,-0.8035;-0.0023,-0.00026,-0.0035;0.00029,0.00017,0.00056;0.0065,0.0041,0.0051];
+disp('The bias of the theta across all simulations:')
+mean_theta = reshape(mean(theta_G3_Het_new_CO2), [Var,G]);
+disp(abs(1 - mean_theta./true_thetas))
+
+disp('The standard deviation for theta across all simulations is:')
+std_theta = reshape(std(theta_G3_Het_new_CO2), [Var,G]);
+disp(std_theta)
 
 % Open file for writing
 fileID1 = fopen('assign_G3_Het_C02.txt', 'w');
