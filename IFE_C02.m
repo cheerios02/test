@@ -42,9 +42,7 @@ Y_lagged = Y(valid_rows);
 % Adjust the number of periods and declare F
 T = T - 1;
 
-oops = 0;
-while obj_value_initial >= 21.1710
-    oops = oops + 1;
+for oops = 1:10000
     disp(oops)
     group_alloc_first_it = randi(G, N, 1);
     countries_per_group_first = histcounts(group_alloc_first_it, 1:G+1);
@@ -86,8 +84,8 @@ while obj_value_initial >= 21.1710
     new_group_alloc = zeros(N, 1);
     country_res = zeros(N, 1);
     for i = 1:N
-        y_it = Y((i-1)*T+1:i*T);
-        x_it = X((i-1)*T+1:i*T, :);
+        y_it = Y_lagged((i-1)*T+1:i*T);
+        x_it = X_lagged((i-1)*T+1:i*T, :);
         min_ssr = inf;
         best_group = 1;
         for g = 1:G
@@ -117,6 +115,9 @@ while obj_value_initial >= 21.1710
     s = 0;
     while delta > 0 && s <= 100
         s = s + 1;
+        if s == 100
+            disp('hi')
+        end
         %% Step 1 of Algorithm 3: Compute thetas
         proj_matrix = eye(T) - F_first_it * F_first_it' / T; % Construct the projection matrix
         for g = 1:G
@@ -155,8 +156,8 @@ while obj_value_initial >= 21.1710
         new_group_alloc = zeros(N, 1);
         country_res = zeros(N, 1);
         for i = 1:N
-            y_it = Y((i-1)*T+1:i*T);
-            x_it = X((i-1)*T+1:i*T, :);
+            y_it = Y_lagged((i-1)*T+1:i*T);
+            x_it = X_lagged((i-1)*T+1:i*T, :);
             min_ssr = inf;
             best_group = 1;
             for g = 1:G
@@ -189,7 +190,7 @@ while obj_value_initial >= 21.1710
                 aux = (Lambda_IFE(i, :) * F_IFE')';
                 for t = 1:T
                     if group_alloc_first_it(value) == c
-                        obj_value = obj_value + (Y((value-1)*T+t) - X((value-1)*T+t, :) * thetas(:, g) - aux(t,1))^2;
+                        obj_value = obj_value + (Y_lagged((value-1)*T+t) - X_lagged((value-1)*T+t, :) * thetas(:, g) - aux(t,1))^2;
                     end
                 end
             end
@@ -212,6 +213,7 @@ while obj_value_initial >= 21.1710
 end
 sigma2 = obj_value_initial/(N*T-G*T-N-K);
 
+MC_assign_list = zeros(MC_sim,N);
 % DGP for IFE
 for j = 1:MC_sim
     disp(j)
@@ -246,7 +248,7 @@ for j = 1:MC_sim
 
     delta = 1;
     s = 0;
-    while delta > 0 && s <= 100
+    while delta > 0 && s <= 500
         s = s + 1;
         % Step 1 of Algorithm 3: Compute thetas
         proj_matrix = eye(T) - F_first_it * F_first_it' / T; % Construct the projection matrix
@@ -286,8 +288,8 @@ for j = 1:MC_sim
         new_group_alloc = zeros(N, 1);
         country_res = zeros(N, 1);
         for i = 1:N
-            y_it = Y((i-1)*T+1:i*T);
-            x_it = X((i-1)*T+1:i*T, :);
+            y_it = Y_lagged((i-1)*T+1:i*T);
+            x_it = X_lagged((i-1)*T+1:i*T, :);
             min_ssr = inf;
             best_group = 1;
             for g = 1:G
@@ -320,7 +322,7 @@ for j = 1:MC_sim
                 aux = (Lambda_IFE(i, :) * F_IFE')'; % Computes the interactive fixed effect
                 for t = 1:T
                     if group_alloc_first_it(value) == c
-                        obj_value = obj_value + (Y((value-1)*T+t) - X((value-1)*T+t, :) * thetas(:, g) - aux(t,1))^2;
+                        obj_value = obj_value + (Y_lagged((value-1)*T+t) - X_lagged((value-1)*T+t, :) * thetas(:, g) - aux(t,1))^2;
                     end
                 end
             end
@@ -341,10 +343,39 @@ for j = 1:MC_sim
         end
     end
     MC_IFE_thetas(:, :, j) = thetas_final_2';
+    MC_assign_list(j,:) = final_groups_2;
 end
 
+%% Compute misclassification probability
+opt_group_assign = [1 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 2 3 3 3 3]';
+diff_perm_num=6; % There are 3! possible permutations. We select a sufficiently high number so we are confident all permutations are included
+permutations = [[1;2;3],[1;3;2],[2;1;3],[2;3;1],[3;2;1],[3;1;2]];
+BigG_perm = zeros(N,MC_sim);
+BigG = MC_assign_list';
 
+obj_value = zeros(diff_perm_num,1);
+for i = 1:MC_sim
+    % Store the optimal group allocation for the current simulation
+    group_col = BigG(:,i);
+    for j = 1:diff_perm_num
+        % Reorder the group allocation according to the j-th permutation and calculate the squared error
+        groups_reordered = permutations(group_col,j);
+        obj_value(j,1) = sum((opt_group_assign - groups_reordered).^2);
+    end
+    % Obtain the relabelling of the groups with the smallest deviation for the current simulation and store it
+    [min_error,min_error_pos] = min(obj_value);
+    BigG_perm(:,i) = permutations(group_col,min_error_pos);
+end
+
+% Compute the misclassification probability
+v = BigG_perm - kron(opt_group_assign,ones(1,MC_sim));
+missclas_prob = 1 - mean(mean(v==0));
+disp('The misclassification probability for 3 groups is:')
+disp(missclas_prob)
+
+%% Bias & Inference
 disp("The bias is:")
-disp(abs(thetas_final' - mean(MC_IFE_thetas,3)))
+disp((mean(MC_IFE_thetas,3)-thetas_final')./thetas_final'*100)
+%disp(abs(thetas_final' - mean(MC_IFE_thetas,3)))
 disp("The standard errors are:")
 disp(std(MC_IFE_thetas, 0, 3) / sqrt(MC_sim))
