@@ -3,15 +3,12 @@ r = 3;
 G = 3;
 N = 21;
 T = 19;
-K = 1;
-%thetas_final = [0.3494, 0.7853, 0.0344; -0.2079, -0.7161, 0.3178; -4.1, -6.8155, -1.5799; 3.0267, 0.4184, -0.8535; -0.44, -0.9041, -0.3529; -0.21, 1.043, -0.97; 0.12, 0.2, 0.11; -0.193, 0.82, 0.328];
-thetas_final = [1,1.75,2.5];
+K = 8;
+thetas_final = [0.3494, 0.7853, 0.0344; -0.2079, -0.7161, 0.3178; -4.1, -6.8155, -1.5799; 3.0267, 0.4184, -0.8535; -0.44, -0.9041, -0.3529; -0.21, 1.043, -0.97; 0.12, 0.2, 0.11; -0.193, 0.82, 0.328];
 MC_IFE_thetas = zeros(r, K, MC_sim);
 MC_assign_list = zeros(MC_sim,N);
 thetas = zeros(K,G);
 av_list_thetas = zeros(r, K, 100);
-coverage_count = zeros(r, K);
-squared_errors = zeros(r, K, MC_sim);
 miss_prob_list = zeros(100,1);
 
 for times = 1:100
@@ -23,13 +20,20 @@ for times = 1:100
         final_F = 0.6*randn(T,r);
         final_Lambda = randn(N,r);
         x1 = rand(21, 19)';
-        X_lagged = [reshape(x1,T*N,1)];
+        x2 = rand(21, 19)';
+        x3 = rand(21, 19)';
+        x4 = rand(21, 19)';
+        x5 = rand(21, 19)';
+        x6 = rand(21, 19)';
+        x7 = rand(21, 19)';
+        x8 = rand(21, 19)';
+        X_lagged = [reshape(x1,T*N,1), reshape(x2,T*N,1), reshape(x3,T*N,1), reshape(x4,T*N,1), reshape(x5,T*N,1), reshape(x6,T*N,1), reshape(x7,T*N,1), reshape(x8,T*N,1)];
         err = randn(21,19);
 
         for i = 1:N
             g = group_alloc_first_it(i);
             for t = 1:T
-                fm(i,t) = x1(t,i)*thetas_final(1,g) + final_Lambda(i,:) * final_F(t,:)' + err(i,t);
+                fm(i,t) = x1(t,i)*thetas_final(1,g) + x2(t,i)*thetas_final(2,g) + x3(t,i)*thetas_final(3,g) + x4(t,i)*thetas_final(4,g) + x5(t,i)*thetas_final(5,g) + x6(t,i)*thetas_final(6,g) + x7(t,i)*thetas_final(7,g) + x8(t,i)*thetas_final(8,g) + final_Lambda(i,:) * final_F(t,:)' + err(i,t);
             end
         end
         Y0 = reshape(fm',N*T,1);
@@ -40,7 +44,7 @@ for times = 1:100
         for i = 1:N
             for g = 1:G
                 if group_alloc_first_it(i) == g
-                    U((i-1)*T+1:i*T) = Y_lagged((i-1)*T+1:i*T) - X_lagged((i-1)*T+1:i*T,:) * thetas_final(:, g);
+                    U((i-1)*T+1:i*T) = Y_lagged((i-1)*T+1:i*T) - X_lagged((i-1)*T+1:i*T, :) * thetas_final(:, g);
                 end
             end
         end
@@ -49,10 +53,8 @@ for times = 1:100
         [~, eigenvalues] = sort(diag(D), 'descend');
         final_F = V(:, eigenvalues(1:r));
 
-        % Step 3 of Algorithm 3: Computes λ's
         final_Lambda = residuals * final_F / T;
 
-        % Initial allocation is the true parameter values
         obj_value_initial = 10^10;
 
         F_first_it = final_F;
@@ -69,7 +71,7 @@ for times = 1:100
                 var2 = 0;
                 countries_in_group = find(group_alloc_first_it == g);
                 for i = countries_in_group'
-                    X_port = X_lagged((i-1)*T+1:i*T);
+                    X_port = X_lagged((i-1)*T+1:i*T,:);
                     Y_port = Y_lagged((i-1)*T+1:i*T);
                     var1 = var1 + X_port' * proj_matrix * X_port;
                     var2 = var2 + X_port' * proj_matrix * Y_port;
@@ -173,10 +175,10 @@ for times = 1:100
         end
         % Obtain the relabelling of the groups with the smallest deviation for the current simulation and store it
         [min_error,min_error_pos] = min(obj_value_perm);
-        BigG_perm(:,variable_perm) = permutations(group_col,min_error_pos);
+        BigG_perm(:,i) = permutations(group_col,min_error_pos);
     end
     v = BigG_perm - kron(initial_group,ones(1,MC_sim));
-    missclas_prob = 1 - mean(mean(v==0));
+    missclas_prob = mean(mean(v==0));
     miss_prob_list(times,1) = missclas_prob;
     av_list_thetas(:,:,times) = mean(MC_IFE_thetas,3);
 
