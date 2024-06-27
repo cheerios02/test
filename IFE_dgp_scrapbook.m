@@ -11,14 +11,14 @@ thetas = zeros(K,G);
 av_list_thetas = zeros(r, K, 100);
 miss_prob_list = zeros(100,1);
 
-for times = 1:100
+for times = 1:50
     disp(times)
     group_alloc_first_it = randi(G, N, 1);
     initial_group = group_alloc_first_it;
     for j = 1:MC_sim
         fm = zeros(N,T);
-        final_F = 0.6*randn(T,r);
-        final_Lambda = randn(N,r);
+        final_F = 0.6*randn(T,200000);
+        final_Lambda = randn(N,200000);
         x1 = rand(21, 19)';
         x2 = rand(21, 19)';
         x3 = rand(21, 19)';
@@ -62,7 +62,7 @@ for times = 1:100
         thetas_opt_first_it = thetas_final;
         delta = 1;
         s = 0;
-        while delta > 10^(-25)
+        while delta > 10^(-24)
             s = s + 1;
             % Step 1 of Algorithm 3: Compute thetas
             proj_matrix = eye(T) - F_first_it * F_first_it' / (T); % Construct the projection matrix

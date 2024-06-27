@@ -42,7 +42,7 @@ Y_lagged = Y(valid_rows);
 % Adjust the number of periods and declare F
 T = T - 1;
 
-for oops = 1:10000
+for oops = 1:150000
     disp(oops)
     group_alloc_first_it = randi(G, N, 1);
     countries_per_group_first = histcounts(group_alloc_first_it, 1:G+1);
@@ -115,9 +115,6 @@ for oops = 1:10000
     s = 0;
     while delta > 0 && s <= 100
         s = s + 1;
-        if s == 100
-            disp('hi')
-        end
         %% Step 1 of Algorithm 3: Compute thetas
         proj_matrix = eye(T) - F_first_it * F_first_it' / T; % Construct the projection matrix
         for g = 1:G
@@ -189,7 +186,7 @@ for oops = 1:10000
             for c = 1:G
                 aux = (Lambda_IFE(i, :) * F_IFE')';
                 for t = 1:T
-                    if group_alloc_first_it(value) == c
+                     if group_alloc_first_it(value) == c
                         obj_value = obj_value + (Y_lagged((value-1)*T+t) - X_lagged((value-1)*T+t, :) * thetas(:, g) - aux(t,1))^2;
                     end
                 end
@@ -232,8 +229,9 @@ for j = 1:MC_sim
     x8 = reshape(X_lagged(:,8),T,N);
 
     for i = 1:N
+        g = final_groups(i);
         for t = 1:T
-            fm(i,t) = x1(t,i)*thetas_final(1) + x2(t,i)*thetas_final(2) + x3(t,i)*thetas_final(3) + x4(t,i)*thetas_final(4) + x5(t,i)*thetas_final(5) + x6(t,i)*thetas_final(6) + x7(t,i)*thetas_final(7) + x8(t,i)*thetas_final(8) + final_Lambda(i,:) * final_F(t,:)' + err(i,t);
+            fm(i,t) = x1(t,i)*thetas_final(1,g) + x2(t,i)*thetas_final(2,g) + x3(t,i)*thetas_final(3,g) + x4(t,i)*thetas_final(4,g) + x5(t,i)*thetas_final(5,g) + x6(t,i)*thetas_final(6,g) + x7(t,i)*thetas_final(7,g) + x8(t,i)*thetas_final(8,g) + final_Lambda(i,:) * final_F(t,:)' + err(i,t);
         end
     end
     Y0 = reshape(fm',N*T,1);
@@ -379,3 +377,7 @@ disp((mean(MC_IFE_thetas,3)-thetas_final')./thetas_final'*100)
 %disp(abs(thetas_final' - mean(MC_IFE_thetas,3)))
 disp("The standard errors are:")
 disp(std(MC_IFE_thetas, 0, 3) / sqrt(MC_sim))
+
+
+% fm(i,t) = x1(t,i)*thetas_final(1) + x2(t,i)*thetas_final(2) + x3(t,i)*thetas_final(3) + x4(t,i)*thetas_final(4) + x5(t,i)*thetas_final(5) + x6(t,i)*thetas_final(6) + x7(t,i)*thetas_final(7) + x8(t,i)*thetas_final(8) + final_Lambda(i,:) * final_F(t,:)' + err(i,t);
+% sigma = sqrt(0.1 + (0.1*x1.^2 + 0.1*x2.^2+ 0.1*x3.^2+ 0.1*x4.^2+ 0.1*x5.^2+ 0.1*x6.^2+ 0.1*x7.^2+ 0.1*x8.^2)/8);
