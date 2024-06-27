@@ -1,6 +1,6 @@
 %Load the MC datasets
-load('inputMCXG3_het_CO2.txt');
-load('inputMCYG3_het_CO2.txt');
+load('inputMCXG3_het_CO2_changed.txt');
+load('inputMCYG3_het_CO2_changed.txt');
 
 N = 21;
 G = 3;
@@ -12,7 +12,7 @@ opt_group_assign_all = zeros(num_simulations-37, N);
 opt_thetas_assign_all = zeros(num_simulations-37,G*K);
 
 % Begin the simulations
-for sth = 1:num_simulations
+for sth = 41:num_simulations
     disp(sth)
     obj_value_initial = 10^10; % Set a high initial objective value
     thetas_opt = zeros(K,1);
@@ -22,8 +22,8 @@ for sth = 1:num_simulations
     countries_per_group_opt = zeros(G,1);
 
     % Obtain the data for X and Y for all countries and periods in the current simulation
-    X = inputMCXG3_het_CO2((sth-1)*N*T+1:sth*N*T,:);
-    Y = inputMCYG3_het_CO2((sth-1)*N*T+1:sth*N*T);
+    X = inputMCXG3_het_CO2_changed((sth-1)*N*T+1:sth*N*T,:);
+    Y = inputMCYG3_het_CO2_changed((sth-1)*N*T+1:sth*N*T);
 
     for j = 1:sim
         % Initialize the variables
@@ -163,25 +163,16 @@ for sth = 1:num_simulations
     opt_group_assign_all(sth, :) = opt_group_assign';
     opt_thetas_assign_all(sth,:,:) = reshape(thetas_opt,1,G*K);
 end
-
-true_thetas = [0.8544,0.9519,0.9658;0.0847,0.0577,0.1254;-0.425,0.7681,0.5967;-1.1846,-1.3381,-1.35;-0.6426,-0.7447,-0.8035;-0.0023,-0.00026,-0.0035;0.00029,0.00017,0.00056;0.0065,0.0041,0.0051];
-disp('The bias of the theta across all simulations:')
-mean_theta = reshape(mean(theta_G3_Het_new_CO2), [Var,G]);
-disp(abs(1 - mean_theta./true_thetas))
-
-disp('The standard deviation for theta across all simulations is:')
-std_theta = reshape(std(theta_G3_Het_new_CO2), [Var,G]);
-disp(std_theta)
-
+return;
 % Open file for writing
-fileID1 = fopen('assign_G3_Het_C02.txt', 'w');
-fileID2 = fopen('theta_G3_Het_new_CO2.txt', 'w');
+fileID1 = fopen('a.txt', 'w');
+fileID2 = fopen('s.txt', 'w');
 
 % Save all transposed results to the text files
-for sth = 1:num_simulations
-    fprintf(fileID1, '%d ', opt_group_assign_all(sth, :));
+for sth = 1:10
+    fprintf(fileID1, '%d ', opt_group_assign_all(sth+40, :));
     fprintf(fileID1, '\n');
-    fprintf(fileID2, '%d ', opt_thetas_assign_all(sth, :));
+    fprintf(fileID2, '%d ', opt_thetas_assign_all(sth+40, :));
     fprintf(fileID2, '\n');
 end
 
