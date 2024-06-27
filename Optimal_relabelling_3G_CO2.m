@@ -1,12 +1,14 @@
 % Load the necessary datasets and set the number of countries and
 % simulations
-load('assign_G3_Het_C02.txt');
-BigG = assign_G3_Het_C02';
+load('assign_G3_Het_C02_changed.txt');
+BigG = assign_G3_Het_C02_changed';
+load('theta_G3_Het_new_CO2_changed.txt');
 N = 21;
 repNum = 50;
 G = 3;
+K = 8;
 
-opt_group_assign= [1 1 2 3 2 1 1 2 1 3 3 2 2 3 2 3 1 1 2 1 3]';
+opt_group_assign= [3 3 1 3 3 3 3 1 3 3 2 1 1 2 3 2 3 3 3 3 3]';
 
 % Denote all possible permutations
 diff_perm_num=6; % There are 3! possible permutations. We select a sufficiently high number so we are confident all permutations are included
@@ -33,4 +35,11 @@ missclas_prob = 1 - mean(mean(v==0));
 disp('The misclassification probability for 3 groups is:')
 disp(missclas_prob)
 
-save('BigG_perm_G3_het_CO2.mat', 'BigG_perm');
+true_thetas = [1.0573,1.0437,1.0311;-0.282,0.2397,0.0848;3.0497,1.6145,-0.3242;-1.5472,-1.3994,-1.2407;-0.9248,-0.9176,-0.5975;-0.0038,-0.0024,0.0008;0.0013,0.00049,-0.0001;0.0083,0.0021,0.010];
+mean_theta = reshape(mean(theta_G3_Het_new_CO2_changed), [K,G]);
+disp('The bias of the theta across all simulations:')
+disp((mean_theta-true_thetas)./true_thetas*100);
+ 
+disp('The standard deviation for theta across all simulations is:')
+std_theta = reshape(std(theta_G3_Het_new_CO2_changed), [K,G]);
+disp(std_theta)
